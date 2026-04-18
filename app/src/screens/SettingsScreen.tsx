@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
 import { useTeamData } from '../hooks/useTeamData';
 import { colors as c } from '../theme';
 
@@ -16,20 +16,24 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <ImageBackground source={LOGO} style={s.banner} imageStyle={s.bannerImg}>
-        <View style={s.bannerOverlay}>
-          <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
+      {/* Clean logo banner — no overlay clutter */}
+      <Image source={LOGO} style={s.banner} resizeMode="cover" />
+
+      {/* Jersey + team name below the banner */}
+      <View style={s.profileRow}>
+        <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
+        <View>
           <Text style={s.teamName}>{team?.team_name ?? 'Elite Titans'}</Text>
-          <Text style={s.sport}>{team?.sports_type_name ?? 'Cricket'}</Text>
+          <Text style={s.sport}>Cricket{team?.city_name ? ` · ${team.city_name}` : ''}</Text>
         </View>
-      </ImageBackground>
+      </View>
 
       <View style={s.card}>
         <Text style={s.cardTitle}>Team</Text>
         <Row label="Name" value={team?.team_name ?? 'Elite Titans'} />
-        <Row label="City" value={team?.city ?? '—'} />
-        <Row label="Sport" value={team?.sports_type_name ?? 'Cricket'} />
-        <Row label="Founded" value={team?.established_year ?? '—'} />
+        <Row label="City" value={team?.city_name ?? '—'} />
+        <Row label="Sport" value="Cricket" />
+        <Row label="Founded" value={team?.created_date ? String(new Date(team.created_date).getFullYear()) : '—'} />
         <Row label="Team ID" value={TEAM_ID} />
       </View>
 
@@ -50,11 +54,11 @@ export default function SettingsScreen() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: string | number }) {
   return (
     <View style={s.row}>
       <Text style={s.key}>{label}</Text>
-      <Text style={s.val}>{value}</Text>
+      <Text style={s.val}>{String(value)}</Text>
     </View>
   );
 }
@@ -62,12 +66,15 @@ function Row({ label, value }: { label: string; value: string }) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { paddingBottom: 40 },
-  banner: { width: '100%', height: 220 },
-  bannerImg: { opacity: 0.4 },
-  bannerOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)' },
-  jersey: { width: 90, height: 90, marginBottom: 8 },
-  teamName: { color: c.text, fontSize: 22, fontWeight: '900', letterSpacing: 1 },
-  sport: { color: c.accent, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  banner: { width: '100%', height: 200 },
+  profileRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: 1, borderBottomColor: c.border,
+  },
+  jersey: { width: 80, height: 80 },
+  teamName: { color: c.text, fontSize: 20, fontWeight: '900', letterSpacing: 0.5 },
+  sport: { color: c.accent, fontSize: 13, fontWeight: '600', marginTop: 3 },
   card: { backgroundColor: c.card, borderRadius: 12, padding: 16, marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: c.border },
   cardTitle: { color: c.accent, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border },
