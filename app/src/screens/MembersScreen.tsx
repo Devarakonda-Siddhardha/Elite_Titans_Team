@@ -1,17 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTeamData } from '../hooks/useTeamData';
 import { colors as c } from '../theme';
 
-const LOGO = require('../../assets/logo.jpg');
-
 export default function MembersScreen() {
   const { data, loading, error } = useTeamData();
+  const navigation = useNavigation<any>();
+  const members = data?.members ?? [];
 
   if (loading) return <View style={s.center}><ActivityIndicator size="large" color={c.accent} /></View>;
   if (error) return <View style={s.center}><Text style={s.err}>Failed to load: {error}</Text></View>;
-
-  const members = data?.members ?? [];
 
   return (
     <FlatList
@@ -22,14 +21,16 @@ export default function MembersScreen() {
       ListHeaderComponent={<Text style={s.heading}>Squad ({members.length})</Text>}
       ListEmptyComponent={<Text style={s.empty}>No members found</Text>}
       renderItem={({ item }) => (
-        <View style={s.card}>
+        <TouchableOpacity
+          style={s.card}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('PlayerProfile', { member: item })}
+        >
           {item.profile_photo ? (
             <Image source={{ uri: item.profile_photo }} style={s.avatar} />
           ) : (
             <View style={[s.avatar, s.avatarFallback]}>
-              <Text style={s.avatarText}>
-                {(item.name ?? '?')[0].toUpperCase()}
-              </Text>
+              <Text style={s.avatarText}>{(item.name ?? '?')[0].toUpperCase()}</Text>
             </View>
           )}
           <View style={s.info}>
@@ -39,7 +40,8 @@ export default function MembersScreen() {
             </View>
             <Text style={s.role}>{item.badges?.join(' · ') || 'Player'}</Text>
           </View>
-        </View>
+          <Text style={s.chevron}>›</Text>
+        </TouchableOpacity>
       )}
     />
   );
@@ -61,4 +63,5 @@ const s = StyleSheet.create({
   name: { color: c.text, fontWeight: '600', fontSize: 15 },
   captain: { backgroundColor: c.accent, color: '#000', fontSize: 10, fontWeight: '900', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
   role: { color: c.sub, fontSize: 12, marginTop: 2 },
+  chevron: { color: c.muted, fontSize: 22, fontWeight: '300' },
 });
