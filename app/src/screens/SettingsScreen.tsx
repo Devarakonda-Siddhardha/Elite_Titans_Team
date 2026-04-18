@@ -1,8 +1,7 @@
 import React from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, ImageBackground,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, ImageBackground } from 'react-native';
 import { useTeamData } from '../hooks/useTeamData';
+import { colors as c } from '../theme';
 
 const LOGO = require('../../assets/logo.jpg');
 const JERSEY = require('../../assets/jersey.png');
@@ -17,7 +16,6 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
-      {/* Logo banner */}
       <ImageBackground source={LOGO} style={s.banner} imageStyle={s.bannerImg}>
         <View style={s.bannerOverlay}>
           <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
@@ -26,7 +24,6 @@ export default function SettingsScreen() {
         </View>
       </ImageBackground>
 
-      {/* Team info */}
       <View style={s.card}>
         <Text style={s.cardTitle}>Team</Text>
         <Row label="Name" value={team?.team_name ?? 'Elite Titans'} />
@@ -36,7 +33,6 @@ export default function SettingsScreen() {
         <Row label="Team ID" value={TEAM_ID} />
       </View>
 
-      {/* Links */}
       <View style={s.card}>
         <Text style={s.cardTitle}>Links</Text>
         <TouchableOpacity onPress={() => Linking.openURL(CRICHEROES_URL)} style={s.link}>
@@ -44,7 +40,6 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Data */}
       <View style={s.card}>
         <Text style={s.cardTitle}>Data</Text>
         <Row label="Last synced" value={data?.scraped_at ? new Date(data.scraped_at).toLocaleString() : '—'} />
@@ -65,24 +60,19 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: c.bg },
   content: { paddingBottom: 40 },
-
   banner: { width: '100%', height: 220 },
   bannerImg: { opacity: 0.4 },
-  bannerOverlay: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
+  bannerOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)' },
   jersey: { width: 90, height: 90, marginBottom: 8 },
-  teamName: { color: '#fff', fontSize: 22, fontWeight: '900', letterSpacing: 1 },
-  sport: { color: '#f5a623', fontSize: 12, fontWeight: '600', marginTop: 2 },
-
-  card: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginHorizontal: 16, marginBottom: 16, marginTop: 16 },
-  cardTitle: { color: '#f5a623', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
-  key: { color: '#888', fontSize: 14 },
-  val: { color: '#fff', fontSize: 14, fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
+  teamName: { color: c.text, fontSize: 22, fontWeight: '900', letterSpacing: 1 },
+  sport: { color: c.accent, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  card: { backgroundColor: c.card, borderRadius: 12, padding: 16, marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: c.border },
+  cardTitle: { color: c.accent, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border },
+  key: { color: c.sub, fontSize: 14 },
+  val: { color: c.text, fontSize: 14, fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
   link: { paddingVertical: 10 },
-  linkText: { color: '#f5a623', fontSize: 15, fontWeight: '600' },
+  linkText: { color: c.accent, fontSize: 15, fontWeight: '600' },
 });
