@@ -1,8 +1,10 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, ActivityIndicator, Image,
 } from 'react-native';
 import { useTeamData } from '../hooks/useTeamData';
+
+const JERSEY = require('../../assets/jersey.png');
 
 export default function DashboardScreen() {
   const { data, loading, error } = useTeamData();
@@ -17,6 +19,7 @@ export default function DashboardScreen() {
     <ScrollView style={s.container} contentContainerStyle={s.content}>
       {/* Header */}
       <View style={s.hero}>
+        <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
         <Text style={s.teamName}>{team?.team_name ?? 'Elite Titans'}</Text>
         <Text style={s.sub}>{team?.city ?? ''} · {team?.sports_type_name ?? 'Cricket'}</Text>
       </View>
@@ -60,7 +63,8 @@ const s = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0a' },
   err: { color: '#ff4444', fontSize: 14 },
-  hero: { alignItems: 'center', paddingVertical: 28 },
+  hero: { alignItems: 'center', paddingVertical: 20 },
+  jersey: { width: 160, height: 160, marginBottom: 12 },
   teamName: { fontSize: 28, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
   sub: { color: '#888', marginTop: 4, fontSize: 13 },
   row: { flexDirection: 'row', gap: 12, marginBottom: 20 },

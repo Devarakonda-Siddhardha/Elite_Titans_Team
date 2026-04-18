@@ -1,8 +1,10 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image,
 } from 'react-native';
 import { useTeamData } from '../hooks/useTeamData';
+
+const JERSEY = require('../../assets/jersey.png');
 
 const TEAM_ID = '6955664';
 const TEAM_SLUG = 'elite-titans';
@@ -14,7 +16,10 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <Text style={s.heading}>Profile & Settings</Text>
+      <View style={s.jerseyWrap}>
+        <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
+        <Text style={s.heading}>Profile & Settings</Text>
+      </View>
 
       {/* Team info */}
       <View style={s.card}>
@@ -57,6 +62,8 @@ function Row({ label, value }: { label: string; value: string }) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
   content: { padding: 16, paddingBottom: 40 },
+  jerseyWrap: { alignItems: 'center', paddingTop: 8, marginBottom: 8 },
+  jersey: { width: 130, height: 130, marginBottom: 10 },
   heading: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 20 },
   card: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 16 },
   cardTitle: { color: '#1DB954', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
