@@ -7,6 +7,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import MembersStack from './src/screens/MembersStack';
 import MatchesScreen from './src/screens/MatchesScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import { colors as c } from './src/theme';
 
 const Tab = createBottomTabNavigator();
@@ -17,12 +18,13 @@ const icons: Record<string, string> = {
   Members: '👥',
   Matches: '⚔️',
   Settings: '⚙️',
+  Profile: '🐉',
 };
 
 function LogoButton() {
   const navigation = useNavigation<any>();
   return (
-    <TouchableOpacity onPress={() => navigation.navigate('Settings')} activeOpacity={0.75}>
+    <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.75}>
       <Image
         source={LOGO}
         style={{ width: 32, height: 32, borderRadius: 6, marginRight: 14, borderWidth: 1, borderColor: c.accent }}
@@ -57,6 +59,7 @@ export default function App() {
           <Tab.Screen name="Members" component={MembersStack} options={{ headerShown: false }} />
           <Tab.Screen name="Matches" component={MatchesScreen} />
           <Tab.Screen name="Settings" component={SettingsScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
