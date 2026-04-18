@@ -1,0 +1,14 @@
+{
+  "name": "elite-titans-scraper",
+  "version": "1.0.0",
+  "description": "Scrapes Elite Titans stats from Cricheroes and pushes to GitHub Gist",
+  "main": "scrape.js",
+  "scripts": {
+    "start": "node scrape.js",
+    "push": "node scrape.js --push"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0",
+    "dotenv": "^16.4.5"
+  }
+}
