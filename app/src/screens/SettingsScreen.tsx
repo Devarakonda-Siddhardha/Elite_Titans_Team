@@ -1,9 +1,10 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, ImageBackground,
 } from 'react-native';
 import { useTeamData } from '../hooks/useTeamData';
 
+const LOGO = require('../../assets/logo.jpg');
 const JERSEY = require('../../assets/jersey.png');
 
 const TEAM_ID = '6955664';
@@ -16,10 +17,14 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <View style={s.jerseyWrap}>
-        <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
-        <Text style={s.heading}>Profile & Settings</Text>
-      </View>
+      {/* Logo banner */}
+      <ImageBackground source={LOGO} style={s.banner} imageStyle={s.bannerImg}>
+        <View style={s.bannerOverlay}>
+          <Image source={JERSEY} style={s.jersey} resizeMode="contain" />
+          <Text style={s.teamName}>{team?.team_name ?? 'Elite Titans'}</Text>
+          <Text style={s.sport}>{team?.sports_type_name ?? 'Cricket'}</Text>
+        </View>
+      </ImageBackground>
 
       {/* Team info */}
       <View style={s.card}>
@@ -61,15 +66,23 @@ function Row({ label, value }: { label: string; value: string }) {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
-  content: { padding: 16, paddingBottom: 40 },
-  jerseyWrap: { alignItems: 'center', paddingTop: 8, marginBottom: 8 },
-  jersey: { width: 130, height: 130, marginBottom: 10 },
-  heading: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 20 },
-  card: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 16 },
-  cardTitle: { color: '#1DB954', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+  content: { paddingBottom: 40 },
+
+  banner: { width: '100%', height: 220 },
+  bannerImg: { opacity: 0.4 },
+  bannerOverlay: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  jersey: { width: 90, height: 90, marginBottom: 8 },
+  teamName: { color: '#fff', fontSize: 22, fontWeight: '900', letterSpacing: 1 },
+  sport: { color: '#f5a623', fontSize: 12, fontWeight: '600', marginTop: 2 },
+
+  card: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginHorizontal: 16, marginBottom: 16, marginTop: 16 },
+  cardTitle: { color: '#f5a623', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
   key: { color: '#888', fontSize: 14 },
   val: { color: '#fff', fontSize: 14, fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
   link: { paddingVertical: 10 },
-  linkText: { color: '#1DB954', fontSize: 15, fontWeight: '600' },
+  linkText: { color: '#f5a623', fontSize: 15, fontWeight: '600' },
 });
