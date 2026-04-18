@@ -28,16 +28,16 @@ export default function MembersScreen() {
           ) : (
             <View style={[s.avatar, s.avatarFallback]}>
               <Text style={s.avatarText}>
-                {(item.name ?? item.player_name ?? '?')[0].toUpperCase()}
+                {(item.name ?? '?')[0].toUpperCase()}
               </Text>
             </View>
           )}
           <View style={s.info}>
             <View style={s.nameRow}>
-              <Text style={s.name}>{item.name ?? item.player_name ?? 'Unknown'}</Text>
+              <Text style={s.name}>{item.name ?? 'Unknown'}</Text>
               {item.is_captain && <Text style={s.captain}>C</Text>}
             </View>
-            <Text style={s.role}>{item.badges?.join(' · ') || item.player_role || 'Player'}</Text>
+            <Text style={s.role}>{item.badges?.join(' · ') || 'Player'}</Text>
           </View>
         </View>
       )}

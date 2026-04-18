@@ -2,40 +2,121 @@ require('dotenv').config();
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
+const { execSync } = require('child_process');
 
 const TEAM_ID = process.env.TEAM_ID || '6955664';
 const TEAM_SLUG = process.env.TEAM_SLUG || 'elite-titans';
 const BASE = `https://cricheroes.com/team-profile/${TEAM_ID}/${TEAM_SLUG}`;
-
-const TABS = ['profile', 'matches', 'stats', 'leaderboard', 'members'];
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
 function log(...args) {
   console.log(`[${new Date().toISOString()}]`, ...args);
 }
 
-async function scrapeTab(page, tab) {
-  const apiResponses = {};
-  const handler = async (response) => {
-    const url = response.url();
-    if (!url.includes('cricheroes.in/api/')) return;
-    try {
-      const ct = response.headers()['content-type'] || '';
-      if (!ct.includes('application/json')) return;
-      const json = await response.json();
-      const key = url.split('/api/')[1].split('?')[0];
-      apiResponses[key] = apiResponses[key] || [];
-      apiResponses[key].push({ url, data: json });
-    } catch (e) {}
-  };
-  page.on('response', handler);
+function unwrap(field) {
+  if (!field || typeof field !== 'object') return null;
+  if (field.status === false) return null;
+  if ('data' in field) return field.data;
+  return field;
+}
 
-  log(`Loading ${tab}...`);
+async function loadPage(page, tab) {
+  log(`Loading ${tab}`);
   await page.goto(`${BASE}/${tab}`, { waitUntil: 'networkidle2', timeout: 60000 });
-  await new Promise(r => setTimeout(r, 3000));
+  await new Promise(r => setTimeout(r, 2500));
+  await page.evaluate(async () => {
+    for (let i = 0; i < 8; i++) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise(r => setTimeout(r, 400));
+    }
+    window.scrollTo(0, 0);
+  });
+  await new Promise(r => setTimeout(r, 1500));
+}
 
-  page.off('response', handler);
-  return apiResponses;
+async function getNextData(page) {
+  return page.evaluate(() => {
+    const el = document.getElementById('__NEXT_DATA__');
+    return el ? JSON.parse(el.textContent).props.pageProps : null;
+  });
+}
+
+async function scrapeMembers(page) {
+  await loadPage(page, 'members');
+  return page.evaluate(() => {
+    const cards = [...document.querySelectorAll('a[href*="/player-profile/"]')];
+    const seen = new Set();
+    const out = [];
+    for (const c of cards) {
+      const href = c.getAttribute('href') || '';
+      if (seen.has(href)) continue;
+      seen.add(href);
+      const m = href.match(/player-profile\/(\d+)\/([^/]+)/);
+      const lines = (c.innerText || '').split('\n').map(s => s.trim()).filter(Boolean);
+      const img = c.querySelector('img');
+      out.push({
+        player_id: m ? parseInt(m[1], 10) : null,
+        slug: m ? m[2] : null,
+        name: lines[0] || null,
+        badges: lines.slice(1),
+        is_captain: lines.some(l => /captain/i.test(l)),
+        profile_photo: img?.getAttribute('src') || null
+      });
+    }
+    return out;
+  });
+}
+
+async function scrapeLeaderboard(page) {
+  await loadPage(page, 'leaderboard');
+  return page.evaluate(() => {
+    const sections = [];
+    const headings = [...document.querySelectorAll('h2, h3, [class*="title"], [class*="Title"]')]
+      .filter(h => h.innerText && h.innerText.length < 60);
+
+    const playerCards = [...document.querySelectorAll('a[href*="/player-profile/"]')];
+    const seenPlayers = playerCards.map(c => {
+      const href = c.getAttribute('href') || '';
+      const m = href.match(/player-profile\/(\d+)\/([^/]+)/);
+      return {
+        player_id: m ? parseInt(m[1], 10) : null,
+        slug: m ? m[2] : null,
+        text: (c.innerText || '').split('\n').map(s => s.trim()).filter(Boolean),
+        context_text: (c.closest('section, div[class*="leaderboard"], div[class*="Leaderboard"]')?.innerText || '').slice(0, 200)
+      };
+    });
+
+    return { headings: headings.map(h => h.innerText), entries: seenPlayers };
+  });
+}
+
+async function scrapeAllMatches(page) {
+  const years = [2026, 2025, 2024];
+  const all = [];
+  const seen = new Set();
+  for (const year of years) {
+    log(`Matches year=${year}`);
+    await page.goto(`${BASE}/matches?year=${year}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    await new Promise(r => setTimeout(r, 2000));
+    const pageProps = await getNextData(page);
+    const list = unwrap(pageProps?.matches) || [];
+    for (const m of (Array.isArray(list) ? list : [])) {
+      if (seen.has(m.match_id)) continue;
+      seen.add(m.match_id);
+      all.push(m);
+    }
+  }
+  return all;
+}
+
+async function scrapeTeamInfo(page) {
+  await page.goto(`${BASE}/stats`, { waitUntil: 'networkidle2', timeout: 60000 });
+  await new Promise(r => setTimeout(r, 2000));
+  const pageProps = await getNextData(page);
+  return {
+    team: unwrap(pageProps?.teamDetails),
+    team_stats: unwrap(pageProps?.teamStats)
+  };
 }
 
 async function run() {
@@ -46,135 +127,53 @@ async function run() {
 
   try {
     const page = await browser.newPage();
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
-    );
+    await page.setUserAgent(UA);
     await page.setViewport({ width: 1366, height: 900 });
 
+    const { team, team_stats } = await scrapeTeamInfo(page);
+    const matches = await scrapeAllMatches(page);
+    const members = await scrapeMembers(page);
+    const leaderboard = await scrapeLeaderboard(page);
+
     const bundle = {
-      team_id: TEAM_ID,
-      team_slug: TEAM_SLUG,
       scraped_at: new Date().toISOString(),
-      tabs: {}
+      team,
+      team_stats,
+      matches,
+      members,
+      leaderboard
     };
 
-    for (const tab of TABS) {
-      try {
-        bundle.tabs[tab] = await scrapeTab(page, tab);
-      } catch (e) {
-        log(`Failed ${tab}:`, e.message);
-        bundle.tabs[tab] = { error: e.message };
-      }
-    }
-
-    const out = normalize(bundle);
     const outPath = path.join(__dirname, 'data.json');
-    fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
+    fs.writeFileSync(outPath, JSON.stringify(bundle, null, 2));
     log(`Saved ${outPath}`);
+    log(`Team: ${team?.team_name} | Matches: ${matches.length} | Members: ${members.length}`);
 
     if (process.argv.includes('--push')) {
-      await pushToGist(out);
+      pushToGit();
     }
-
-    return out;
   } finally {
     await browser.close();
   }
 }
 
-function normalize(bundle) {
-  const team = { id: bundle.team_id, slug: bundle.team_slug };
-  const out = {
-    team,
-    scraped_at: bundle.scraped_at,
-    overview: null,
-    matches: [],
-    players: [],
-    team_stats: null,
-    leaderboard: null
-  };
-
-  const flatten = (tabData) => {
-    const arr = [];
-    Object.values(tabData || {}).forEach(entries => {
-      if (Array.isArray(entries)) entries.forEach(e => arr.push(e));
-    });
-    return arr;
-  };
-
-  const allResponses = Object.values(bundle.tabs).flatMap(flatten);
-
-  for (const r of allResponses) {
-    const u = r.url.toLowerCase();
-    const d = r.data?.data || r.data;
-    if (!d) continue;
-
-    if (u.includes('/team/') && u.includes('/profile') && !out.overview) out.overview = d;
-    if (u.includes('matches') && Array.isArray(d) && d.length && (d[0].match_id || d[0].match_start_time)) {
-      out.matches = d;
-    }
-    if (u.includes('matches') && d.matches && Array.isArray(d.matches)) {
-      out.matches = d.matches;
-    }
-    if (u.includes('member') && Array.isArray(d) && d.length && d[0].player_id) {
-      out.players = d;
-    }
-    if (u.includes('member') && d.players && Array.isArray(d.players)) {
-      out.players = d.players;
-    }
-    if (u.includes('stats') && !Array.isArray(d)) {
-      out.team_stats = out.team_stats || d;
-    }
-    if (u.includes('leaderboard')) {
-      out.leaderboard = out.leaderboard || d;
-    }
-  }
-
-  out._raw = bundle.tabs;
-  return out;
-}
-
-function pushToGist(data) {
-  const token = process.env.GITHUB_TOKEN;
-  const gistId = process.env.GIST_ID;
-  if (!token || !gistId) {
-    log('Skipping Gist push (GITHUB_TOKEN or GIST_ID missing)');
-    return;
-  }
-
-  const body = JSON.stringify({
-    files: {
-      'elite-titans.json': { content: JSON.stringify(data, null, 2) }
-    }
-  });
-
-  return new Promise((resolve, reject) => {
-    const req = https.request({
-      method: 'PATCH',
-      hostname: 'api.github.com',
-      path: `/gists/${gistId}`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'User-Agent': 'elite-titans-scraper',
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          log('Pushed to Gist');
-          resolve();
-        } else {
-          reject(new Error(`Gist push ${res.statusCode}: ${b}`));
-        }
+function pushToGit() {
+  const repoDir = path.resolve(__dirname, '..');
+  try {
+    execSync('git add scraper/data.json', { cwd: repoDir, stdio: 'inherit' });
+    try {
+      execSync(`git commit -m "chore: auto-update scraped data ${new Date().toISOString()}"`, {
+        cwd: repoDir, stdio: 'inherit'
       });
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
+    } catch (e) {
+      log('Nothing to commit (data unchanged)');
+      return;
+    }
+    execSync('git push origin main', { cwd: repoDir, stdio: 'inherit' });
+    log('Pushed to GitHub');
+  } catch (e) {
+    log('Git push failed:', e.message);
+  }
 }
 
 run().catch(e => {

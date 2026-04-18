@@ -17,7 +17,7 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
       {/* Clean logo banner — no overlay clutter */}
-      <Image source={LOGO} style={s.banner} resizeMode="cover" />
+      <Image source={LOGO} style={s.banner} resizeMode="contain" />
 
       {/* Jersey + team name below the banner */}
       <View style={s.profileRow}>
@@ -66,7 +66,7 @@ function Row({ label, value }: { label: string; value: string | number }) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { paddingBottom: 40 },
-  banner: { width: '100%', height: 200 },
+  banner: { width: '100%', height: 220, backgroundColor: '#1a0000' },
   profileRow: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
     paddingHorizontal: 20, paddingVertical: 16,
