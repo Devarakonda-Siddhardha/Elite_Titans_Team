@@ -60,12 +60,21 @@ export function useTeamData() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    return fetch(`${DATA_URL}?t=${Date.now()}`)
+    return fetch(`${DATA_URL}?t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        }
+      })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then(setData)
+      .then(d => {
+        // guard: never replace good data with empty scrape
+        if (d.matches?.length === 0 && data?.matches?.length > 0) return;
+        setData(d);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
