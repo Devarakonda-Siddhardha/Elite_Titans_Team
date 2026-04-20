@@ -4,7 +4,7 @@
     "slug": "elite-titans",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.jpg",
+    "icon": "./assets/logo-icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.jpg",
+        "foregroundImage": "./assets/logo-icon.png",
         "backgroundColor": "#8B0000"
       },
       "package": "com.elitetitans.app",
@@ -27,6 +27,11 @@
     },
     "web": {
       "favicon": "./assets/logo.jpg"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e358e56b-461c-4b58-9bf5-ffb3989d0d07"
+      }
     }
   }
 }
