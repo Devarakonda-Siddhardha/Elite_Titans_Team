@@ -37,6 +37,16 @@ jobs:
         working-directory: scraper
         run: node scrape.js
 
+      - name: Validate scrape result
+        run: |
+          MATCHES=$(node -e "const d=require('./scraper/data.json'); console.log(d.matches?.length||0)")
+          echo "Scraped matches: $MATCHES"
+          if [ "$MATCHES" -lt "1" ]; then
+            echo "❌ Empty result — aborting to protect existing data"
+            exit 1
+          fi
+          echo "✅ Data looks good"
+
       - name: Commit and push if data changed
         run: |
           git config user.name "github-actions[bot]"
