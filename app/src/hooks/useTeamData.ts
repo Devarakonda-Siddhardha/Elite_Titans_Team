@@ -43,12 +43,37 @@ export interface Member {
   profile_photo: string | null;
 }
 
+export interface PlayerStats {
+  player_id: number;
+  name: string;
+  profile_photo?: string | null;
+  city_name?: string;
+  batting_hand?: string;
+  bowling_style?: string;
+  batter_category?: string;
+  bowler_category?: string;
+  playing_role?: string;
+  dob?: string;
+  total_matches?: number;
+  total_runs?: number;
+  total_wickets?: number;
+  innings?: number | null;
+  high_score?: number | null;
+  batting_avg?: number | null;
+  strike_rate?: number | null;
+  sixes?: number | null;
+  fours?: number | null;
+  overs_bowled?: number | null;
+  economy?: number | null;
+}
+
 export interface TeamData {
   scraped_at: string;
   team: Record<string, any> | null;
   team_stats: TeamStatRow[] | null;
   matches: Match[];
   members: Member[];
+  player_stats?: PlayerStats[];
   leaderboard: any;
 }
 

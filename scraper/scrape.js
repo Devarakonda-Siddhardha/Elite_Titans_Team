@@ -109,6 +109,73 @@ async function scrapeAllMatches(page) {
   return all;
 }
 
+function parseStatement(statement) {
+  if (!statement || typeof statement !== 'string') return {};
+  const clean = statement.replace(/<\/?[^>]+>/g, '').replace(/\s+/g, ' ');
+  const num = (re) => {
+    const m = clean.match(re);
+    if (!m) return null;
+    const v = parseFloat(m[1]);
+    return Number.isFinite(v) ? v : null;
+  };
+  return {
+    innings: num(/(\d+)\s+turns? at the crease/i),
+    high_score: num(/top score of (\d+\.?\d*)/i),
+    batting_avg: num(/average of (\d+\.?\d*)/i),
+    strike_rate: num(/strike rate of (\d+\.?\d*)/i),
+    sixes: num(/(\d+)\s+sixes/i),
+    fours: num(/(\d+)\s+fours/i),
+    overs_bowled: num(/bowled\s+(\d+\.?\d*)\s+overs/i),
+    economy: num(/economy rate of (\d+\.?\d*)/i),
+  };
+}
+
+async function scrapePlayer(page, player) {
+  if (!player.player_id || !player.slug) return null;
+  const url = `https://cricheroes.com/player-profile/${player.player_id}/${player.slug}/stats`;
+  try {
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 1200));
+    const pageProps = await getNextData(page);
+    const info = unwrap(pageProps?.playerInfo);
+    if (!info) return null;
+    const derived = parseStatement(info.player_statement);
+    return {
+      player_id: info.player_id,
+      name: info.name,
+      profile_photo: info.profile_photo,
+      city_name: info.city_name,
+      batting_hand: info.batting_hand,
+      bowling_style: info.bowling_style,
+      batter_category: info.batter_category,
+      bowler_category: info.bowler_category,
+      playing_role: info.playing_role,
+      dob: info.dob,
+      total_matches: info.total_matches,
+      total_runs: info.total_runs,
+      total_wickets: info.total_wickets,
+      ...derived,
+    };
+  } catch (e) {
+    log(`  player ${player.player_id} failed:`, e.message);
+    return null;
+  }
+}
+
+async function scrapeAllPlayers(page, members) {
+  log(`Scraping ${members.length} player profiles...`);
+  const out = [];
+  let i = 0;
+  for (const m of members) {
+    i++;
+    const stats = await scrapePlayer(page, m);
+    if (stats) out.push(stats);
+    if (i % 10 === 0) log(`  ${i}/${members.length}`);
+  }
+  log(`Got stats for ${out.length}/${members.length} players`);
+  return out;
+}
+
 async function scrapeTeamInfo(page) {
   await page.goto(`${BASE}/stats`, { waitUntil: 'networkidle2', timeout: 60000 });
   await new Promise(r => setTimeout(r, 2000));
@@ -134,6 +201,7 @@ async function run() {
     const matches = await scrapeAllMatches(page);
     const members = await scrapeMembers(page);
     const leaderboard = await scrapeLeaderboard(page);
+    const player_stats = await scrapeAllPlayers(page, members);
 
     const bundle = {
       scraped_at: new Date().toISOString(),
@@ -141,13 +209,14 @@ async function run() {
       team_stats,
       matches,
       members,
+      player_stats,
       leaderboard
     };
 
     const outPath = path.join(__dirname, 'data.json');
     fs.writeFileSync(outPath, JSON.stringify(bundle, null, 2));
     log(`Saved ${outPath}`);
-    log(`Team: ${team?.team_name} | Matches: ${matches.length} | Members: ${members.length}`);
+    log(`Team: ${team?.team_name} | Matches: ${matches.length} | Members: ${members.length} | PlayerStats: ${player_stats.length}`);
 
     if (process.argv.includes('--push')) {
       pushToGit();
