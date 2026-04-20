@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Text, View, TouchableOpacity } from 'react-native';
 import DashboardScreen from './src/screens/DashboardScreen';
 import MembersStack from './src/screens/MembersStack';
-import MatchesScreen from './src/screens/MatchesScreen';
+import MatchesStack from './src/screens/MatchesStack';
 import SettingsScreen from './src/screens/SettingsScreen';
 import MyProfileScreen from './src/screens/MyProfileScreen';
 import { colors as c } from './src/theme';
@@ -59,7 +59,7 @@ function Tabs() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Members" component={MembersStack} options={{ headerShown: false }} />
-      <Tab.Screen name="Matches" component={MatchesScreen} />
+      <Tab.Screen name="Matches" component={MatchesStack} options={{ headerShown: false }} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

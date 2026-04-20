@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Image, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTeamData, matchOutcome, opponent, Match } from '../hooks/useTeamData';
 import { colors as c } from '../theme';
 
@@ -54,6 +55,7 @@ export default function MatchesScreen() {
 }
 
 function MatchCard({ m }: { m: Match }) {
+  const navigation = useNavigation<any>();
   const opp = opponent(m);
   const out = matchOutcome(m);
   const date = new Date(m.match_start_time);
@@ -63,7 +65,7 @@ function MatchCard({ m }: { m: Match }) {
   const tagStyle = out === 'won' ? s.tagWon : out === 'lost' ? s.tagLost : out === 'upcoming' ? s.tagUpcoming : s.tagDraw;
 
   return (
-    <View style={s.card}>
+    <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate('MatchDetail', { match: m })} style={s.card}>
       <View style={[s.bar, barStyle]} />
       <View style={s.cardBody}>
         <View style={s.cardTop}>
@@ -84,7 +86,7 @@ function MatchCard({ m }: { m: Match }) {
           <Text style={s.result}>{m.match_result}{m.win_by ? ` ${m.win_by}` : ''}</Text>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
